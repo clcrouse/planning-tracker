@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Planning Team · Task Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F4EE;
+    --ink: #1A1812;
+    --ink-light: #4A4640;
+    --ink-muted: #9A9690;
+    --gold: #B8860B;
+    --gold-light: #F5EDD4;
+    --gold-mid: #D4A843;
+    --green: #2D5A27;
+    --green-light: #EAF2E8;
+    --red: #8B2020;
+    --red-light: #F5EAEA;
+    --blue: #1A3A5C;
+    --blue-light: #E8EFF7;
+    --border: #DDD8CE;
+    --shadow: 0 2px 12px rgba(26,24,18,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,24,18,0.12);
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--gold-mid);
+  }
+  .header-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    letter-spacing: 0.02em;
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-logo span { color: var(--gold-mid); }
+  .header-sub { font-size: 12px; color: var(--ink-muted); margin-left: auto; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4CAF50; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* Layout */
+  .layout { display: flex; min-height: calc(100vh - 60px); }
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--ink);
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 1.5rem;
+    font-size: 14px;
+    color: #9A9690;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--cream); background: rgba(255,255,255,0.05); }
+  .nav-item.active { color: var(--cream); border-left-color: var(--gold-mid); background: rgba(255,255,255,0.07); }
+  .nav-item .badge {
+    margin-left: auto;
+    background: var(--gold);
+    color: var(--cream);
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .nav-section {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5A5650;
+    padding: 14px 1.5rem 4px;
+    font-weight: 600;
+  }
+
+  /* Main */
+  .main { flex: 1; padding: 2rem; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .stat-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+  .stat-num { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--ink); line-height: 1; }
+  .stat-lbl { font-size: 12px; color: var(--ink-muted); margin-top: 4px; font-weight: 500; letter-spacing: 0.04em; }
+  .stat-card.gold { border-top: 3px solid var(--gold-mid); }
+  .stat-card.green { border-top: 3px solid var(--green); }
+  .stat-card.blue { border-top: 3px solid var(--blue); }
+
+  /* Filters */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+  select, input[type=text] {
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: white;
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border 0.15s;
+  }
+  select:focus, input[type=text]:focus { border-color: var(--gold-mid); }
+  select { cursor: pointer; }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--ink);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--cream); border-color: var(--ink-muted); }
+  .btn.primary { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .btn.primary:hover { background: #2A2820; }
+  .btn.gold { background: var(--gold); color: white; border-color: var(--gold); }
+  .btn.gold:hover { background: var(--gold-mid); }
+  .btn.sm { padding: 5px 10px; font-size: 12px; }
+  .btn.danger { color: var(--red); border-color: #DDD; }
+  .btn.danger:hover { background: var(--red-light); border-color: var(--red); }
+
+  /* Project Groups */
+  .project-group { margin-bottom: 2rem; }
+  .project-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1.5px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .project-name { font-family: 'DM Serif Display', serif; font-size: 15px; color: var(--ink); }
+  .project-meta { font-size: 11px; color: var(--ink-muted); margin-left: auto; }
+  .project-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--gold-light);
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* Task Card */
+  .task-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .task-card:hover { box-shadow: var(--shadow-lg); border-color: var(--gold-mid); }
+  .task-card.done { opacity: 0.55; }
+  .task-check {
+    width: 18px; height: 18px;
+    accent-color: var(--green);
+    cursor: pointer;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .task-body { flex: 1; min-width: 0; }
+  .task-desc { font-size: 14px; line-height: 1.5; color: var(--ink); margin-bottom: 6px; }
+  .task-desc.done { text-decoration: line-through; color: var(--ink-muted); }
+  .task-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 500;
+  }
+  .tag-assignee { background: var(--green-light); color: var(--green); }
+  .tag-source { background: var(--blue-light); color: var(--blue); font-size: 10px; }
+  .tag-done { background: var(--green-light); color: var(--green); }
+  .tag-unassigned { background: #F0EDE8; color: var(--ink-muted); }
+  .task-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .task-controls select { font-size: 12px; padding: 4px 8px; }
+  .task-controls input[type=text] { font-size: 12px; padding: 4px 8px; flex: 1; min-width: 120px; max-width: 220px; }
+  .task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* Import page */
+  .import-box {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    max-width: 760px;
+  }
+  .import-box h2 { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 4px; }
+  .import-box p { font-size: 13px; color: var(--ink-muted); margin-bottom: 1.5rem; }
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 12px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--cream);
+    color: var(--ink);
+    resize: vertical;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.6;
+    outline: none;
+    transition: border 0.15s;
+  }
+  textarea:focus { border-color: var(--gold-mid); }
+  .form-row { display: flex; gap: 12px; margin-top: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .form-field { flex: 1; min-width: 180px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+  .form-field input[type=text] { width: 100%; }
+
+  /* Extracted tasks */
+  .extracted-section { margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem; }
+  .extracted-section h3 { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 1rem; }
+  .ex-item {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .ex-item input[type=checkbox] { margin-top: 3px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
+  .ex-body { flex: 1; }
+  .ex-text { font-size: 13px; color: var(--ink); margin-bottom: 6px; line-height: 1.4; }
+  .ex-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ex-controls select, .ex-controls input[type=text] { font-size: 12px; padding: 4px 8px; max-width: 180px; }
+
+  /* Team page */
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 2rem; }
+  .team-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+  .avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .team-name { font-size: 15px; font-weight: 600; }
+  .team-role { font-size: 12px; color: var(--ink-muted); }
+  .team-tasks { font-size: 12px; color: var(--gold); font-weight: 600; margin-top: 4px; }
+  .add-member-box {
+    background: white;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    max-width: 500px;
+  }
+  .add-member-box h3 { font-family: 'DM Serif Display', serif; font-size: 16px; margin-bottom: 1rem; }
+
+  /* Empty / loading */
+  .empty { text-align: center; padding: 3rem; color: var(--ink-muted); font-size: 14px; }
+  .loading { text-align: center; padding: 2rem; color: var(--ink-muted); font-size: 14px; }
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--ink); margin-bottom: 1.5rem; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--ink); color: var(--cream);
+    padding: 10px 18px; border-radius: var(--radius);
+    font-size: 13px; box-shadow: var(--shadow-lg);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; pointer-events: auto; }
+
+  @media (max-width: 640px) {
+    .sidebar { display: none; }
+    .main { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    ◆ <span>Planning</span> Team
+  </div>
+  <div class="header-sub">
+    <span class="live-dot"></span>Live · synced
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="nav-section">Workspace</div>
+    <button class="nav-item active" onclick="showPage('tasks', this)">
+      ☑ Tasks
+      <span class="badge" id="nav-open-count">0</span>
+    </button>
+    <button class="nav-item" onclick="showPage('import', this)">✉ Import Email</button>
+    <button class="nav-item" onclick="showPage('team', this)">◎ Team</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- TASKS PAGE -->
+    <div id="page-tasks" class="page active">
+      <div class="page-title">Task Tracker</div>
+      <div class="stats-grid">
+        <div class="stat-card gold"><div class="stat-num" id="s-total">—</div><div class="stat-lbl">Total Tasks</div></div>
+        <div class="stat-card"><div class="stat-num" id="s-open">—</div><div class="stat-lbl">Open</div></div>
+        <div class="stat-card green"><div class="stat-num" id="s-done">—</div><div class="stat-lbl">Completed</div></div>
+        <div class="stat-card blue"><div class="stat-num" id="s-projects">—</div><div class="stat-lbl">Projects</div></div>
+      </div>
+      <div class="toolbar">
+        <select id="f-assignee" onchange="renderTasks()"><option value="">All assignees</option></select>
+        <select id="f-project" onchange="renderTasks()"><option value="">All projects</option></select>
+        <select id="f-status" onchange="renderTasks()">
+          <option value="">All status</option>
+          <option value="open">Open</option>
+          <option value="done">Completed</option>
+        </select>
+        <select id="f-group" onchange="renderTasks()">
+          <option value="project">Group by project</option>
+          <option value="assignee">Group by assignee</option>
+          <option value="none">No grouping</option>
+        </select>
+      </div>
+      <div id="tasks-list"><div class="loading"><span class="spinner"></span>Loading tasks...</div></div>
+    </div>
+
+    <!-- IMPORT PAGE -->
+    <div id="page-import" class="page">
+      <div class="page-title">Import Email</div>
+      <div class="import-box">
+        <h2>Paste Ken's Email</h2>
+        <p>Claude will extract every action item, suggest project labels, and let you assign them before adding to the tracker.</p>
+        <textarea id="email-body" placeholder="Paste the email body here..."></textarea>
+        <div class="form-row">
+          <div class="form-field">
+            <div class="form-label">Email Subject / Source</div>
+            <input type="text" id="email-subject" placeholder="e.g. Action Items from The Day!" />
+          </div>
+          <button class="btn gold" onclick="extractTasks()" id="extract-btn">✦ Extract Tasks</button>
+        </div>
+        <div class="extracted-section" id="extracted-section" style="display:none">
+          <h3>Review Extracted Tasks</h3>
+          <div id="extracted-list"></div>
+          <div style="display:flex;gap:10px;margin-top:1rem;">
+            <button class="btn" onclick="cancelExtract()">Discard</button>
+            <button class="btn primary" onclick="confirmTasks()">✓ Add to Tracker</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM PAGE -->
+    <div id="page-team" class="page">
+      <div class="page-title">Team Members</div>
+      <div class="team-grid" id="team-grid"><div class="loading"><span class="spinner"></span>Loading...</div></div>
+      <div class="add-member-box">
+        <h3>Add Team Member</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <input type="text" id="new-name" placeholder="Full name" style="flex:1;min-width:140px;" />
+          <input type="text" id="new-role" placeholder="Role (e.g. Civil Designer)" style="flex:1;min-width:160px;" />
+          <button class="btn primary" onclick="addMember()">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, doc,
+  onSnapshot, addDoc, updateDoc, deleteDoc, setDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDH5vQJ2tuCUdpuc3AJgngBRZ9ci_iIJeA",
+  authDomain: "planning-team-project-tracker.firebaseapp.com",
+  projectId: "planning-team-project-tracker",
+  storageBucket: "planning-team-project-tracker.firebasestorage.app",
+  messagingSenderId: "849121903733",
+  appId: "1:849121903733:web:edb09f756301f7b48c243c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── State ──────────────────────────────────────────────
+let tasks = [];
+let team = [];
+let extractedTasks = [];
+
+// ── Avatar colors ──────────────────────────────────────
+const COLORS = [
+  { bg:'#E6F1FB', color:'#0C447C' },
+  { bg:'#E1F5EE', color:'#085041' },
+  { bg:'#EEEDFE', color:'#3C3489' },
+  { bg:'#FAEEDA', color:'#633806' },
+  { bg:'#FAECE7', color:'#712B13' },
+  { bg:'#EAF3DE', color:'#27500A' },
+];
+function avatarColor(name) {
+  let h = 0; for (const c of (name||'')) h += c.charCodeAt(0);
+  return COLORS[h % COLORS.length];
+}
+function initials(name) {
+  return (name||'??').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+
+// ── Toast ──────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── Navigation ─────────────────────────────────────────
+window.showPage = function(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (page === 'tasks') renderTasks();
+  if (page === 'team') renderTeam();
+};
+
+// ── Firestore listeners ────────────────────────────────
+onSnapshot(collection(db, 'tasks'), snap => {
+  tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderTasks();
+});
+
+onSnapshot(collection(db, 'team'), snap => {
+  team = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  updateFilterSelects();
+  renderTeam();
+});
+
+// ── Seed Ken's email tasks on first load ───────────────
+async function seedIfEmpty() {
+  const snap = await getDocs(collection(db, 'tasks'));
+  if (!snap.empty) return;
+  const SOURCE = "Action Items from The Day!";
+  const TODAY = new Date().toLocaleDateString();
+  const RAW = [
+    { project:"12080.01 – Belmont", desc:"Print plan for meeting on Friday", assignee:"" },
+    { project:"12080.01 – Belmont", desc:"Determine if grading can work on access road for fire", assignee:"" },
+    { project:"12080.01 – Belmont", desc:"Meeting with Commissioner Matt in Gwinnett about zoning viability (Yang)", assignee:"" },
+    { project:"21055.00A", desc:"Start working on color story (due next week)", assignee:"Sonia" },
+    { project:"25002.01A – Ashwood", desc:"Set date and make contact with Business Association for presentation", assignee:"" },
+    { project:"25002.01A – Ashwood", desc:"Dive into existing lake analysis — get Neil up to speed", assignee:"Neil" },
+    { project:"25002.01A – Ashwood", desc:"Get as-builts from Branch Properties on the larger culvert", assignee:"" },
+    { project:"25002.01A – Ashwood", desc:"Develop alternate grading and utility plan on 120-unit plan", assignee:"" },
+    { project:"25002.01A – Ashwood", desc:"Meet with Mayor and council now that filed — coordinate with Richard", assignee:"Richard" },
+    { project:"25002.01A – Ashwood", desc:"Verify LOI language about roadway the city wants through site and our objection to it", assignee:"" },
+    { project:"25225.00", desc:"Print latest color plan and color elevation for Friday meeting", assignee:"" },
+    { project:"Santa Fe Venture Drive", desc:"Print plans for Friday meeting", assignee:"" },
+    { project:"24343.00", desc:"Update master site plan for more lots and crossing dam", assignee:"" },
+    { project:"21266.00 – Temple", desc:"Develop master plan for 1-acre lots and review with team", assignee:"" },
+    { project:"24008.00A", desc:"Complete frontage layout on GDOT entrance, then schedule meeting with GDOT", assignee:"" },
+    { project:"26049.00 – James Jackson / Wood Partners", desc:"Review layout to add spaces with units — send markup to Joseph", assignee:"Joseph" },
+    { project:"Mount Vernon Concession Buildings", desc:"Complete minor engineering work", assignee:"" },
+    { project:"04272.00C – Life Time / Conrad", desc:"List minimum and maximum parking counts", assignee:"" },
+    { project:"22085.00 – Ethridge", desc:"Determine if sewer around site is Barrow, Winder, or Auburn — confirm which jurisdiction site is in", assignee:"" },
+    { project:"26115.00 – Penler", desc:"Create new layout based on Council Meeting outcome", assignee:"" },
+    { project:"W. Kingsfield", desc:"Start developing booklet to Triple E standard with 3D and 2D", assignee:"" },
+    { project:"21155.02 – Plant Atkinson", desc:"Finish zoning plan — add revision date and R/W dedications, review Cobb zoning and transportation comments", assignee:"" },
+    { project:"Gate Parkway", desc:"Send message to Council", assignee:"" },
+    { project:"26130.00 – Hwy 211", desc:"Get new site plan for commercial and coordinate with civil on septic", assignee:"" },
+    { project:"Windward", desc:"Review Windward master plan zoning to determine right outcome", assignee:"" },
+    { project:"19185.00B", desc:"Send sketches of green space ideas and apartment concept", assignee:"" },
+    { project:"23182.00 – Hiram Senior", desc:"Pull up and review final zoning plan — meet with Brandon (David Weekly) to discuss changes", assignee:"" },
+  ];
+  for (const t of RAW) {
+    await addDoc(collection(db, 'tasks'), { ...t, done: false, doneAt: null, source: SOURCE, note: '', createdAt: TODAY });
+  }
+}
+seedIfEmpty();
+
+// ── Render Tasks ───────────────────────────────────────
+function updateFilterSelects() {
+  const fa = document.getElementById('f-assignee');
+  const curA = fa.value;
+  fa.innerHTML = '<option value="">All assignees</option>' +
+    team.map(m => `<option value="${m.name}">${m.name}</option>`).join('') +
+    '<option value="__unassigned__">Unassigned</option>';
+  fa.value = curA;
+
+  const fp = document.getElementById('f-project');
+  const curP = fp.value;
+  const projects = [...new Set(tasks.map(t => t.project).filter(Boolean))].sort();
+  fp.innerHTML = '<option value="">All projects</option>' + projects.map(p => `<option value="${p}">${p}</option>`).join('');
+  fp.value = curP;
+}
+
+window.renderTasks = function() {
+  updateFilterSelects();
+  const open = tasks.filter(t => !t.done).length;
+  document.getElementById('s-total').textContent = tasks.length;
+  document.getElementById('s-open').textContent = open;
+  document.getElementById('s-done').textContent = tasks.filter(t => t.done).length;
+  document.getElementById('s-projects').textContent = new Set(tasks.map(t => t.project).filter(Boolean)).size;
+  document.getElementById('nav-open-count').textContent = open;
+
+  const aF = document.getElementById('f-assignee').value;
+  const pF = document.getElementById('f-project').value;
+  const sF = document.getElementById('f-status').value;
+  const gBy = document.getElementById('f-group').value;
+
+  let filtered = tasks.filter(t => {
+    if (aF === '__unassigned__' && t.assignee) return false;
+    if (aF && aF !== '__unassigned__' && t.assignee !== aF) return false;
+    if (pF && t.project !== pF) return false;
+    if (sF === 'open' && t.done) return false;
+    if (sF === 'done' && !t.done) return false;
+    return true;
+  });
+
+  filtered.sort((a, b) => a.done - b.done || (a.createdAt||'').localeCompare(b.createdAt||''));
+
+  const el = document.getElementById('tasks-list');
+  if (!filtered.length) { el.innerHTML = '<div class="empty">No tasks match your filters.</div>'; return; }
+
+  if (gBy === 'none') { el.innerHTML = filtered.map(taskHTML).join(''); return; }
+
+  const groupKey = gBy === 'project' ? 'project' : 'assignee';
+  const groups = {};
+  filtered.forEach(t => {
+    const key = t[groupKey] || (gBy === 'project' ? 'No project' : 'Unassigned');
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  let html = '';
+  Object.keys(groups).sort().forEach(key => {
+    const g = groups[key];
+    const openC = g.filter(t => !t.done).length;
+    html += `<div class="project-group">
+      <div class="project-header">
+        <span class="project-name">${key}</span>
+        <span class="project-pill">${openC} open</span>
+        <span class="project-meta">${g.length} task${g.length!==1?'s':''}</span>
+      </div>
+      ${g.map(taskHTML).join('')}
+    </div>`;
+  });
+  el.innerHTML = html;
+};
+
+function taskHTML(t) {
+  const teamOpts = '<option value="">Assign to...</option>' +
+    team.map(m => `<option value="${m.name}" ${t.assignee===m.name?'selected':''}>${m.name}</option>`).join('');
+  return `<div class="task-card ${t.done?'done':''}" id="tc-${t.id}">
+    <input type="checkbox" class="task-check" ${t.done?'checked':''} onchange="toggleTask('${t.id}')" />
+    <div class="task-body">
+      <div class="task-desc ${t.done?'done':''}">${t.desc}</div>
+      <div class="task-meta">
+        ${t.assignee ? `<span class="tag tag-assignee">${t.assignee}</span>` : '<span class="tag tag-unassigned">Unassigned</span>'}
+        ${t.done ? '<span class="tag tag-done">✓ Done</span>' : ''}
+        ${t.source ? `<span class="tag tag-source">${t.source}</span>` : ''}
+      </div>
+      ${!t.done ? `<div class="task-controls">
+        <select onchange="reassign('${t.id}', this.value)">${teamOpts}</select>
+        <input type="text" placeholder="Add a note..." value="${t.note||''}" onblur="setNote('${t.id}', this.value)" />
+      </div>` : (t.note ? `<div style="font-size:12px;color:var(--ink-muted);margin-top:6px;font-style:italic;">${t.note}</div>` : '')}
+    </div>
+    <div class="task-actions">
+      <button class="btn sm danger" onclick="deleteTask('${t.id}')">✕</button>
+    </div>
+  </div>`;
+}
+
+// ── Task actions ───────────────────────────────────────
+window.toggleTask = async function(id) {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  await updateDoc(doc(db, 'tasks', id), { done: !t.done, doneAt: !t.done ? new Date().toLocaleDateString() : null });
+  toast(!t.done ? '✓ Task marked complete' : 'Task reopened');
+};
+
+window.reassign = async function(id, name) {
+  await updateDoc(doc(db, 'tasks', id), { assignee: name });
+  toast(`Assigned to ${name||'nobody'}`);
+};
+
+window.setNote = async function(id, val) {
+  await updateDoc(doc(db, 'tasks', id), { note: val });
+};
+
+window.deleteTask = async function(id) {
+  if (!confirm('Delete this task?')) return;
+  await deleteDoc(doc(db, 'tasks', id));
+  toast('Task deleted');
+};
+
+// ── Import / Extract ───────────────────────────────────
+window.extractTasks = async function() {
+  const email = document.getElementById('email-body').value.trim();
+  if (!email) { alert('Please paste an email first.'); return; }
+  const subject = document.getElementById('email-subject').value.trim() || 'Ken email ' + new Date().toLocaleDateString();
+  const btn = document.getElementById('extract-btn');
+  btn.innerHTML = '<span class="spinner"></span> Extracting...';
+  btn.disabled = true;
+  document.getElementById('extracted-section').style.display = 'none';
+
+  const teamNames = team.map(m => m.name).join(', ') || 'no team members yet';
+  const prompt = `You are a task extractor for a civil engineering planning team. Extract every actionable task from this email. For each task suggest an assignee if the email mentions one; team members available: ${teamNames}. Respond ONLY with a JSON array, no markdown, no preamble, no backticks. Each object must have exactly: {"task":"...","assignee":"name or empty string","project":"project name/number if mentioned, else empty string"}.\n\nEmail:\n${email}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    let text = (data.content||[]).map(c => c.text||'').join('');
+    text = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(text);
+    extractedTasks = parsed.map((item, i) => ({ tempId: i, task: item.task, assignee: item.assignee||'', project: item.project||'', selected: true, source: subject }));
+    renderExtracted();
+    document.getElementById('extracted-section').style.display = 'block';
+  } catch(e) {
+    alert('Could not extract tasks. Please try again.');
+  }
+  btn.innerHTML = '✦ Extract Tasks';
+  btn.disabled = false;
+};
+
+function renderExtracted() {
+  const el = document.getElementById('extracted-list');
+  const teamOpts = '<option value="">Unassigned</option>' + team.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+  el.innerHTML = extractedTasks.map(item => `
+    <div class="ex-item">
+      <input type="checkbox" ${item.selected?'checked':''} onchange="toggleEx(${item.tempId})" />
+      <div class="ex-body">
+        <div class="ex-text">${item.task}</div>
+        <div class="ex-controls">
+          <select onchange="setExA(${item.tempId}, this.value)">${teamOpts.replace(`value="${item.assignee}"`, `value="${item.assignee}" selected`)}</select>
+          <input type="text" placeholder="Project" value="${item.project}" onchange="setExP(${item.tempId}, this.value)" />
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+window.toggleEx = function(id) { const e = extractedTasks.find(e => e.tempId===id); if(e) e.selected=!e.selected; };
+window.setExA = function(id, v) { const e = extractedTasks.find(e => e.tempId===id); if(e) e.assignee=v; };
+window.setExP = function(id, v) { const e = extractedTasks.find(e => e.tempId===id); if(e) e.project=v; };
+
+window.confirmTasks = async function() {
+  const TODAY = new Date().toLocaleDateString();
+  const selected = extractedTasks.filter(e => e.selected);
+  for (const item of selected) {
+    await addDoc(collection(db, 'tasks'), { desc: item.task, assignee: item.assignee, project: item.project, done: false, doneAt: null, source: item.source, note: '', createdAt: TODAY });
+  }
+  toast(`✓ ${selected.length} task${selected.length!==1?'s':''} added`);
+  document.getElementById('email-body').value = '';
+  document.getElementById('email-subject').value = '';
+  document.getElementById('extracted-section').style.display = 'none';
+  extractedTasks = [];
+  showPage('tasks', document.querySelector('.nav-item'));
+  document.querySelectorAll('.nav-item').forEach((b,i) => b.classList.toggle('active', i===0));
+};
+
+window.cancelExtract = function() {
+  extractedTasks = [];
+  document.getElementById('extracted-section').style.display = 'none';
+};
+
+// ── Team ───────────────────────────────────────────────
+window.renderTeam = function() {
+  const el = document.getElementById('team-grid');
+  if (!team.length) { el.innerHTML = '<div class="empty">No team members yet.</div>'; return; }
+  el.innerHTML = team.map(m => {
+    const col = avatarColor(m.name);
+    const open = tasks.filter(t => t.assignee === m.name && !t.done).length;
+    return `<div class="team-card">
+      <div class="avatar" style="background:${col.bg};color:${col.color};">${initials(m.name)}</div>
+      <div class="team-name">${m.name}</div>
+      <div class="team-role">${m.role}</div>
+      <div class="team-tasks">${open} open task${open!==1?'s':''}</div>
+      <button class="btn sm danger" style="margin-top:4px;" onclick="removeMember('${m.id}')">Remove</button>
+    </div>`;
+  }).join('');
+};
+
+window.addMember = async function() {
+  const name = document.getElementById('new-name').value.trim();
+  const role = document.getElementById('new-role').value.trim();
+  if (!name) return;
+  await addDoc(collection(db, 'team'), { name, role: role || 'Team Member' });
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-role').value = '';
+  toast(`${name} added to team`);
+};
+
+window.removeMember = async function(id) {
+  if (!confirm('Remove this team member?')) return;
+  await deleteDoc(doc(db, 'team', id));
+  toast('Team member removed');
+};
+
+</script>
+</body>
+</html>
